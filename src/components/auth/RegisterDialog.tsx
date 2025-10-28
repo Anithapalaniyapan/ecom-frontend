@@ -108,6 +108,10 @@ export default function RegisterDialog({ open, onClose, onSwitchToLogin }: Regis
       if (response.ok) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Trigger storage event to update header
+        window.dispatchEvent(new Event('storage'));
+        
         onClose();
         
         // Reset form
@@ -124,8 +128,8 @@ export default function RegisterDialog({ open, onClose, onSwitchToLogin }: Regis
         setCurrentStep(1);
         setError('');
         
-        // Redirect to home page
-        window.location.href = '/home';
+        // Redirect to profile page
+        window.location.href = '/profile';
       } else {
         setError(data.message || 'Registration failed');
       }

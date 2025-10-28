@@ -46,13 +46,17 @@ export default function LoginDialog({ open, onClose, onSwitchToRegister }: Login
         // Store token in localStorage
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Trigger storage event to update header
+        window.dispatchEvent(new Event('storage'));
+        
         onClose();
         // Reset form
         setEmail('');
         setPassword('');
         setError('');
-        // Redirect to home page
-        window.location.href = '/home';
+        // Redirect to profile page
+        window.location.href = '/profile';
       } else {
         setError(data.message || 'Invalid credentials');
       }
