@@ -75,23 +75,35 @@ export default function ProfilePage() {
     ProfileSection.PERSONAL_INFO
   );
 
-  // Load user data from localStorage
+  // Load user data from backend API
   useEffect(() => {
     const loadUserData = async () => {
       const token = localStorage.getItem('token');
-      const userStr = localStorage.getItem('user');
       
-      if (!token || !userStr) {
+      if (!token) {
         // Not authenticated, redirect to landing page
         router.push('/');
         return;
       }
 
       try {
-        const userData = JSON.parse(userStr);
+        // Fetch fresh user data from backend
+        const response = await fetch('http://localhost:3000/api/users/profile', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch user data');
+        }
+
+        const userData = await response.json();
         
-        // Get profile picture from userData (from backend) or localStorage
-        const profilePicture = userData.profilePicture || localStorage.getItem('profilePicture');
+        // Update localStorage with fresh user data
+        localStorage.setItem('user', JSON.stringify(userData));
         
         // Convert backend user format to UserProfile format
         const userProfile: UserProfile = {
@@ -104,7 +116,7 @@ export default function ProfilePage() {
           role: userData.role || 'customer',
           isActive: userData.isActive ?? true,
           emailVerified: userData.emailVerified ?? false,
-          profilePicture: profilePicture || undefined,
+          profilePicture: userData.profilePicture || undefined,
           businessName: userData.businessName,
           businessDescription: userData.businessDescription,
           businessLicense: userData.businessLicense,
@@ -114,8 +126,36 @@ export default function ProfilePage() {
         
         setUser(userProfile);
       } catch (error) {
-        console.error('Error parsing user data:', error);
-        router.push('/');
+        console.error('Error loading user data:', error);
+        // Fallback to localStorage if API fails
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          try {
+            const userData = JSON.parse(userStr);
+            const userProfile: UserProfile = {
+              id: userData.id || '',
+              email: userData.email || '',
+              firstName: userData.firstName || '',
+              lastName: userData.lastName || '',
+              phoneNumber: userData.phoneNumber || '',
+              address: userData.address || '',
+              role: userData.role || 'customer',
+              isActive: userData.isActive ?? true,
+              emailVerified: userData.emailVerified ?? false,
+              profilePicture: userData.profilePicture || undefined,
+              businessName: userData.businessName,
+              businessDescription: userData.businessDescription,
+              businessLicense: userData.businessLicense,
+              taxId: userData.taxId,
+              isVerifiedSeller: userData.isVerifiedSeller,
+            };
+            setUser(userProfile);
+          } catch (e) {
+            router.push('/');
+          }
+        } else {
+          router.push('/');
+        }
       } finally {
         setLoading(false);
       }

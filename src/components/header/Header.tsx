@@ -207,7 +207,13 @@ export default function Header() {
                     }}
                   >
                     <Avatar
-                      src={(currentUser as any)?.profilePicture || undefined}
+                      src={
+                        (currentUser as any)?.profilePicture 
+                          ? (currentUser as any).profilePicture.startsWith('http') || (currentUser as any).profilePicture.startsWith('data:')
+                            ? (currentUser as any).profilePicture
+                            : `http://localhost:3000/uploads/${(currentUser as any).profilePicture}`
+                          : undefined
+                      }
                       sx={{
                         width: 40,
                         height: 40,

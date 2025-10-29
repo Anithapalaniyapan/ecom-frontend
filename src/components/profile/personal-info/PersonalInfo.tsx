@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -10,11 +10,7 @@ import {
   CardContent,
   Divider,
   Paper,
-  Avatar,
-  IconButton,
 } from '@mui/material';
-import PersonIcon from '@mui/icons-material/Person';
-import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import { UserProfile } from '../types';
 
 interface PersonalInfoProps {
@@ -31,10 +27,6 @@ export default function PersonalInfo({ user, onUpdate }: PersonalInfoProps) {
     address: user.address || '',
   });
 
-  const [profilePicture, setProfilePicture] = useState<string | null>(
-    localStorage.getItem('profilePicture') || null
-  );
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -48,61 +40,6 @@ export default function PersonalInfo({ user, onUpdate }: PersonalInfoProps) {
     onUpdate(formData);
   };
 
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Check file size (max 2MB)
-      if (file.size > 2 * 1024 * 1024) {
-        alert('File size must be less than 2MB');
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const imageUrl = reader.result as string;
-        setProfilePicture(imageUrl);
-        
-        try {
-          // Store in localStorage immediately for UI
-          localStorage.setItem('profilePicture', imageUrl);
-          
-          // Update on backend
-          const token = localStorage.getItem('token');
-          if (token) {
-            const response = await fetch('http://localhost:3000/api/users/profile', {
-              method: 'PATCH',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-              },
-              body: JSON.stringify({ profilePicture: imageUrl }),
-            });
-
-            if (response.ok) {
-              // Update localStorage user data
-              const userStr = localStorage.getItem('user');
-              if (userStr) {
-                const userData = JSON.parse(userStr);
-                userData.profilePicture = imageUrl;
-                localStorage.setItem('user', JSON.stringify(userData));
-              }
-              
-              // Trigger a custom event to update the header
-              window.dispatchEvent(new CustomEvent('profilePictureUpdated', { detail: imageUrl }));
-            }
-          }
-        } catch (error) {
-          console.error('Failed to save profile picture:', error);
-          alert('Failed to save profile picture. Please try again.');
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleImageClick = () => {
-    fileInputRef.current?.click();
-  };
 
   return (
     <Box

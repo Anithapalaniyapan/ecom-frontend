@@ -35,12 +35,29 @@ const menuItems = [
 
 export default function ProfileSidebar({ user, activeSection, onSectionChange, onLogout }: ProfileSidebarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [profilePicture, setProfilePicture] = React.useState<string | null>(
-    localStorage.getItem('profilePicture') || user.profilePicture || null
+  
+  // Helper function to construct full URL from backend path
+  const getProfilePictureUrl = (path: string | null | undefined): string | undefined => {
+    if (!path) return undefined;
+    // If it's already a full URL or data URL, return as is
+    if (path.startsWith('http') || path.startsWith('data:')) {
+      return path;
+    }
+    // Construct full URL from backend path
+    return `http://localhost:3000/uploads/${path}`;
+  };
+
+  const [profilePicture, setProfilePicture] = React.useState<string | null | undefined>(
+    user.profilePicture || null
   );
 
   React.useEffect(() => {
-    // Update profile picture from localStorage when it changes
+    // Update profile picture from user prop when it changes
+    setProfilePicture(user.profilePicture);
+  }, [user.profilePicture]);
+
+  React.useEffect(() => {
+    // Update profile picture when custom event is triggered
     const handleProfilePictureUpdate = (event: Event) => {
       const customEvent = event as CustomEvent;
       setProfilePicture(customEvent.detail);
@@ -67,47 +84,64 @@ export default function ProfileSidebar({ user, activeSection, onSectionChange, o
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+      if (!allowedTypes.includes(file.type)) {
+        alert('Invalid file type. Only JPEG, JPG, and PNG images are allowed.');
+        return;
+      }
+
+      // Validate file size (max 2MB)
       if (file.size > 2 * 1024 * 1024) {
         alert('File size must be less than 2MB');
         return;
       }
 
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const imageUrl = reader.result as string;
-        setProfilePicture(imageUrl);
-        
-        try {
-          localStorage.setItem('profilePicture', imageUrl);
-          
-          const token = localStorage.getItem('token');
-          if (token) {
-            const response = await fetch('http://localhost:3000/api/users/profile', {
-              method: 'PATCH',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-              },
-              body: JSON.stringify({ profilePicture: imageUrl }),
-            });
-
-            if (response.ok) {
-              const userStr = localStorage.getItem('user');
-              if (userStr) {
-                const userData = JSON.parse(userStr);
-                userData.profilePicture = imageUrl;
-                localStorage.setItem('user', JSON.stringify(userData));
-              }
-              
-              window.dispatchEvent(new CustomEvent('profilePictureUpdated', { detail: imageUrl }));
-            }
-          }
-        } catch (error) {
-          console.error('Failed to save profile picture:', error);
-          alert('Failed to save profile picture. Please try again.');
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          alert('You must be logged in to upload a profile picture');
+          return;
         }
-      };
-      reader.readAsDataURL(file);
+
+        // Create FormData for multipart/form-data upload
+        const formData = new FormData();
+        formData.append('file', file);
+
+        // Upload to backend using the new endpoint
+        const response = await fetch('http://localhost:3000/api/users/upload-profile-picture', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+          body: formData,
+        });
+
+        if (response.ok) {
+          const updatedUser = await response.json();
+          const profilePicturePath = updatedUser.profilePicture;
+          
+          // Update local state with the new profile picture path
+          setProfilePicture(profilePicturePath);
+
+          // Update localStorage user data with the new profile picture path
+          const userStr = localStorage.getItem('user');
+          if (userStr) {
+            const userData = JSON.parse(userStr);
+            userData.profilePicture = profilePicturePath;
+            localStorage.setItem('user', JSON.stringify(userData));
+          }
+
+          // Dispatch event with the profile picture path
+          window.dispatchEvent(new CustomEvent('profilePictureUpdated', { detail: profilePicturePath }));
+        } else {
+          const error = await response.json();
+          alert(error.message || 'Failed to upload profile picture. Please try again.');
+        }
+      } catch (error) {
+        console.error('Failed to save profile picture:', error);
+        alert('Failed to save profile picture. Please try again.');
+      }
     }
   };
   return (
@@ -125,7 +159,7 @@ export default function ProfileSidebar({ user, activeSection, onSectionChange, o
       <Box sx={{ mb: 3, position: 'relative' }}>
         <Box sx={{ position: 'relative', display: 'inline-block', mx: 'auto', mb: 2, width: 96, height: 96 }}>
           <Avatar
-            src={profilePicture || user.profilePicture || undefined}
+            src={getProfilePictureUrl(profilePicture || user.profilePicture)}
             sx={{
               width: 96,
               height: 96,
