@@ -27,11 +27,11 @@ interface ProfileSidebarProps {
   onLogout?: () => void;
 }
 
-const menuItems = [
+const baseMenuItems = [
   { id: ProfileSection.PERSONAL_INFO, label: 'Personal Information', icon: PersonIcon },
   { id: ProfileSection.ORDER_HISTORY, label: 'Order History', icon: HistoryIcon },
   { id: ProfileSection.ACCOUNT_SETTINGS, label: 'Account Settings', icon: SettingsIcon },
-];
+] as const;
 
 export default function ProfileSidebar({ user, activeSection, onSectionChange, onLogout }: ProfileSidebarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -208,7 +208,10 @@ export default function ProfileSidebar({ user, activeSection, onSectionChange, o
 
       {/* Navigation */}
       <List sx={{ p: 0 }}>
-        {menuItems.map((item) => {
+        {(user.role === 'seller'
+          ? [...baseMenuItems, { id: ProfileSection.MY_PRODUCTS, label: 'My Products', icon: SettingsIcon }]
+          : baseMenuItems
+        ).map((item: any) => {
           const Icon = item.icon;
           const isActive = activeSection === item.id;
 

@@ -3,6 +3,7 @@ export enum ProfileSection {
   PERSONAL_INFO = 'personal-info',
   ORDER_HISTORY = 'order-history',
   ACCOUNT_SETTINGS = 'account-settings',
+  MY_PRODUCTS = 'my-products',
 }
 
 export interface UserProfile {

@@ -172,18 +172,23 @@ export default function Header() {
               flex: 1,
               justifyContent: 'center'
             }}>
-              <Button sx={{ color: '#1f2937', textTransform: 'none', fontWeight: 600 }}>
+              <Button onClick={() => router.push('/home')} sx={{ color: '#1f2937', textTransform: 'none', fontWeight: 600 }}>
                 Home
               </Button>
-              <Button sx={{ color: '#6b7280', textTransform: 'none', fontWeight: 400 }}>
+              <Button onClick={() => router.push('/dress')} sx={{ color: '#6b7280', textTransform: 'none', fontWeight: 400 }}>
                 Dresses
               </Button>
-              <Button sx={{ color: '#6b7280', textTransform: 'none', fontWeight: 400 }}>
+              <Button onClick={() => router.push('/perfume')} sx={{ color: '#6b7280', textTransform: 'none', fontWeight: 400 }}>
                 Perfumes
               </Button>
-              <Button sx={{ color: '#6b7280', textTransform: 'none', fontWeight: 400 }}>
+              <Button onClick={() => router.push('/shoes')} sx={{ color: '#6b7280', textTransform: 'none', fontWeight: 400 }}>
                 Shoes
               </Button>
+              {isAuthenticated && (currentUser as any)?.role === 'seller' && (
+                <Button onClick={() => router.push('/sell')} sx={{ color: '#9333ea', textTransform: 'none', fontWeight: 600 }}>
+                  Sell
+                </Button>
+              )}
             </Box>
 
             {/* Icons and Auth Buttons */}

@@ -18,6 +18,7 @@ import {
   UserProfile,
   Order,
 } from '@/components/profile';
+import MyProducts from '@/components/profile/seller/MyProducts';
 import Header from '@/components/header/Header';
 import Footer from '@/components/footer/Footer';
 import { useRouter } from 'next/navigation';
@@ -244,6 +245,9 @@ export default function ProfilePage() {
 
       case ProfileSection.ACCOUNT_SETTINGS:
         return <AccountSettings />;
+
+      case ProfileSection.MY_PRODUCTS:
+        return user.role === 'seller' ? <MyProducts /> : null;
 
       default:
         return <PersonalInfo user={user} onUpdate={handleUserUpdate} />;
